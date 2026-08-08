@@ -182,6 +182,7 @@
           <span class="tick-cliente" title="Reportado por">👤 ${esc(t.reporter || "—")}</span>
           <span class="tick-age" title="Criado há">🕐 ${fmtAgo(t.created)}</span>
         </div>
+        ${t.lastActivityMs ? `<div class="tick-lastint">Última interação há ${fmtAgo(t.lastActivityMs)}</div>` : ""}
         <div class="wait ${waitStateCls(t.waitMs)}">
           <div class="waitbar"><div class="${waitBarCls(t.waitMs)}" style="width:${waitPct(t.waitMs)}%"></div></div>
           <div class="tick-wait">${t.waitingForTeam ? "⏳ Sem resposta ao cliente há " + fmtDur(t.waitMs) : "✔ Última resposta foi ao cliente"}</div>
