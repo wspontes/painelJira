@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>N1 | Bugs — Monitor da Fila</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">🔥</span>
+      <div>
+        <h1>Fila N1 · Bugs</h1>
+        <span class="sub" id="queue-sub">carregando…</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="status-chip" id="status-chip" title="Última atualização">
+        <span class="dot" id="status-dot"></span>
+        <span id="statusText">conectando…</span>
+      </div>
+      <button id="btnReload" class="btn-ghost" title="Atualizar agora">⟳</button>
+      <button id="btnNotify" class="btn-ghost" title="Habilitar notificações do navegador">🔔 Notificações</button>
+      <button id="btnPause" class="btn-ghost" title="Pausar auto-atualização">⏸ Pausar</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="summary-cards" id="summaryCards"></section>
+
+    <section class="toolbar">
+      <input id="search" type="search" placeholder="Buscar por ticket, cliente, resumo…" autocomplete="off" />
+      <div class="filters">
+        <button class="chip active" data-filter="all">Todos</button>
+        <button class="chip" data-filter="waiting">⚠️ Aguardando equipe</button>
+        <button class="chip" data-filter="critical">Críticas/Altas</button>
+      </div>
+      <select id="sortSelect">
+        <option value="wait">⏳ Maior espera</option>
+        <option value="priority">🔴 Prioridade</option>
+        <option value="newest">🕐 Mais recentes</option>
+      </select>
+      <button class="btn-ghost" id="btnStaff" title="Tickets por atendente">👥 Por atendente</button>
+    </section>
+
+    <section id="tickets" class="tickets">
+      <div class="empty">Carregando fila…</div>
+    </section>
+
+    <div id="staffPanel" class="tick-detail hidden"></div>
+    <div id="tickDetail" class="tick-detail hidden"></div>
+  </main>
+
+  <div id="toasts" class="toasts"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
