@@ -223,6 +223,13 @@ select#sortSelect {
 
 /* toasts */
 .toasts { position: fixed; bottom: 18px; right: 18px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+
+/* footer */
+.site-footer {
+  text-align: center; color: var(--muted); font-size: 12px;
+  padding: 18px 16px 30px; border-top: 1px solid var(--border);
+  background: var(--panel);
+}
 .toast {
   background: var(--panel-2); border: 1px solid var(--accent); border-left: 4px solid var(--accent);
   color: var(--text); border-radius: 10px; padding: 12px 14px; max-width: 340px;
@@ -234,7 +241,7 @@ select#sortSelect {
 @keyframes slidein { from { transform: translateX(30px); opacity: 0; } to { transform: none; opacity: 1; } }
 
 @media (max-width: 720px) {
-  .tickets { grid-template-columns: 1fr; }
+  .tickets { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   main { padding: 12px 14px 80px; }
   .topbar { flex-direction: column; gap: 8px; padding: 10px 12px; }
   .topbar .brand { width: 100%; }
@@ -248,14 +255,17 @@ select#sortSelect {
   .toolbar input[type="search"] { flex: 1 1 100%; }
   .filters { width: 100%; }
 
-  /* Cards de ticket: sem overflow, texto quebra */
-  .ticket { padding: 12px; }
-  .tick-head { flex-wrap: wrap; gap: 6px; }
+  /* Cards de ticket: 2 por linha, sem overflow, texto quebra */
+  .ticket { padding: 10px; gap: 6px; }
+  .tick-head { flex-wrap: wrap; gap: 5px; }
   .tick-head .status { margin-left: 0; }
-  .tick-title { -webkit-line-clamp: 3; font-size: 13.5px; overflow-wrap: anywhere; word-break: break-word; }
+  .tick-title { -webkit-line-clamp: 3; font-size: 12px; overflow-wrap: anywhere; word-break: break-word; }
   .tick-cliente { max-width: 100%; }
-  .tick-body { gap: 8px; }
+  .tick-body { gap: 6px; font-size: 11px; flex-wrap: wrap; }
   .tick-last .txt { white-space: normal; overflow: visible; }
+  .tick-org { font-size: 10px; padding: 2px 6px; }
+  .tick-lastint { font-size: 10px; }
+  .tick-wait { font-size: 11px; }
 
   /* Modal: bottom-sheet em tela cheia no mobile */
   .tick-detail { align-items: flex-end; justify-content: center; padding: 0; }
@@ -273,11 +283,6 @@ select#sortSelect {
   .comment-item .cb { word-break: break-word; overflow-wrap: anywhere; }
   .comment-item .ca, .comment-item .ct { display: inline; }
   .comment-item .tag-public, .comment-item .tag-internal { margin-bottom: 6px; }
-}
-
-@media (max-width: 400px) {
-  .summary-cards { grid-template-columns: 1fr; }
-  .tick-type { display: inline-block; margin-top: 2px; }
 }
 
 @media (max-width: 400px) {
