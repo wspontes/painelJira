@@ -9,6 +9,7 @@
     filter: "all",
     sort: "wait",
     search: "",
+    orgFilter: "",
     paused: false,
     lastSeen: {},
     notifyEnabled: "Notification" in window && Notification.permission === "granted",
@@ -144,6 +145,13 @@
     switch (state.filter) {
       case "waiting": list = list.filter((t) => t.waitingForTeam); break;
       case "critical": list = list.filter((t) => t.priority === "Highest" || t.priority === "High"); break;
+    }
+    if (state.orgFilter) {
+      const org = state.orgFilter;
+      list = list.filter((t) => {
+        const orgs = t.organizations || [];
+        return org === "(sem organização)" ? !orgs.length : orgs.includes(org);
+      });
     }
     switch (state.sort) {
       case "wait": list.sort((a, b) => b.waitMs - a.waitMs); break;
@@ -294,7 +302,13 @@
       row.addEventListener("click", () => {
         const name = row.dataset.name;
         p.classList.add("hidden");
-        clearSearch(name);
+        if (byOrg) {
+          state.orgFilter = name;
+          renderTickets();
+          renderOrgChip();
+        } else {
+          clearSearch(name);
+        }
       });
     });
   }
@@ -303,6 +317,19 @@
     $("#search").value = name;
     state.search = name;
     renderTickets();
+  }
+
+  // Chip ativo do filtro por organização
+  function renderOrgChip() {
+    const strip = $("#orgFilterStrip");
+    if (!strip) return;
+    if (!state.orgFilter) { strip.innerHTML = ""; return; }
+    strip.innerHTML = `<button class="chip active" data-clear-org>🏢 ${esc(state.orgFilter)} ✕</button>`;
+    strip.querySelector("[data-clear-org]").addEventListener("click", () => {
+      state.orgFilter = "";
+      renderTickets();
+      renderOrgChip();
+    });
   }
 
   // ---------- Detecção de mudanças ----------
@@ -378,6 +405,10 @@
     $$(".chip").forEach((x) => x.classList.remove("active"));
     c.classList.add("active");
     state.filter = c.dataset.filter;
+    if (c.dataset.filter === "all") {
+      state.orgFilter = "";
+      renderOrgChip();
+    }
     renderTickets();
   }));
   $("#sortSelect").addEventListener("change", (e) => { state.sort = e.target.value; renderTickets(); });
@@ -386,5 +417,6 @@
   if ("Notification" in window && Notification.permission === "granted") $("#btnNotify").classList.add("on");
   loadLastSeen();
   refresh();
+  renderOrgChip();
   setInterval(refresh, REFRESH);
 })();
