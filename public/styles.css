@@ -13,7 +13,9 @@
   --radius: 12px;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; min-width: 0; }
+
+html, body { overflow-x: hidden; }
 
 .staff-list { display: flex; flex-direction: column; gap: 6px; max-height: 60vh; overflow: auto; }
 .staff-row {
@@ -232,7 +234,8 @@ select#sortSelect {
   main { padding: 12px 14px 80px; }
   .topbar { flex-direction: column; gap: 8px; padding: 10px 12px; }
   .topbar .brand { width: 100%; }
-  .top-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+  .top-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+  .top-actions .btn-ghost { font-size: 11px; padding: 7px 9px; }
   .btn-ghost { padding: 8px 10px; }
   .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .card { padding: 10px 12px; }
@@ -240,6 +243,15 @@ select#sortSelect {
   .toolbar { gap: 8px; }
   .toolbar input[type="search"] { flex: 1 1 100%; }
   .filters { width: 100%; }
+
+  /* Cards de ticket: sem overflow, texto quebra */
+  .ticket { padding: 12px; }
+  .tick-head { flex-wrap: wrap; gap: 6px; }
+  .tick-head .status { margin-left: 0; }
+  .tick-title { -webkit-line-clamp: 3; font-size: 13.5px; overflow-wrap: anywhere; word-break: break-word; }
+  .tick-cliente { max-width: 100%; }
+  .tick-body { gap: 8px; }
+  .tick-last .txt { white-space: normal; overflow: visible; }
 
   /* Modal: bottom-sheet em tela cheia no mobile */
   .tick-detail { align-items: flex-end; justify-content: center; padding: 0; }
@@ -250,8 +262,18 @@ select#sortSelect {
   }
   .dp-comments { max-height: none; flex: 1; min-height: 0; }
   .tick-detail .panel { display: flex; flex-direction: column; }
+  .detail-head { gap: 8px; }
+  .dp-meta { grid-template-columns: 1fr; }
   .dp-actions { margin-top: auto; padding-top: 10px; }
-  .dp-actions .btn-ghost { flex: 1; text-align: center; }
+  .dp-actions .btn-ghost, .dp-actions a.btn-ghost { flex: 1; text-align: center; justify-content: center; }
+  .comment-item .cb { word-break: break-word; overflow-wrap: anywhere; }
+  .comment-item .ca, .comment-item .ct { display: inline; }
+  .comment-item .tag-public, .comment-item .tag-internal { margin-bottom: 6px; }
+}
+
+@media (max-width: 400px) {
+  .summary-cards { grid-template-columns: 1fr; }
+  .tick-type { display: inline-block; margin-top: 2px; }
 }
 
 @media (max-width: 400px) {
