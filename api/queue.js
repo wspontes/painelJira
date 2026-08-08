@@ -54,6 +54,7 @@ function buildTicket(issue, comments) {
     statusCategory: f.status && f.status.statusCategory ? f.status.statusCategory.name : null,
     reporter: reporter.displayName || "(automático)",
     assignee: f.assignee ? f.assignee.displayName : null,
+    organizations: (Array.isArray(f.customfield_10002) ? f.customfield_10002.map((o) => o && o.name) : []).filter(Boolean),
     created,
     updated: new Date(f.updated).getTime(),
     ageMs: now - created,
@@ -91,7 +92,7 @@ async function fetchIssues(cfg, jql) {
   const issues = [];
   let pageToken = "";
   for (let page = 0; page < 10; page++) {
-    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,priority,reporter,assignee,created,updated,status,labels`;
+    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,priority,reporter,assignee,created,updated,status,labels,customfield_10002`;
     if (pageToken) path += `&nextPageToken=${encodeURIComponent(pageToken)}`;
     const res = await jiraFetch(cfg, path);
     if (!res.ok) {

@@ -177,6 +177,7 @@
           <span class="status">${esc(t.status || "")}</span>
           ${lastBadge}
         </div>
+        ${t.organizations && t.organizations.length ? `<div class="tick-org">🏢 ${esc(t.organizations.join(", "))}</div>` : ""}
         <div class="tick-title" title="${esc(t.summary)}">${esc(t.summary)}</div>
         <div class="tick-body">
           <span class="tick-cliente" title="Reportado por">👤 ${esc(t.reporter || "—")}</span>
