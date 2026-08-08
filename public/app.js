@@ -149,6 +149,7 @@
       case "wait": list.sort((a, b) => b.waitMs - a.waitMs); break;
       case "priority": list.sort((a, b) => (PRIO[a.priority] ?? 9) - (PRIO[b.priority] ?? 9)); break;
       case "newest": list.sort((a, b) => b.created - a.created); break;
+      case "oldest": list.sort((a, b) => a.created - b.created); break;
     }
 
     const wrap = $("#tickets");
@@ -246,20 +247,26 @@
     }
   }
 
-  // ---------- Painel por atendente ----------
-  function showStaff() {
+  // ---------- Painel por atendente / organização ----------
+  // key: "assignee" | "organizations"
+  function showGroupBy(key) {
     const q = state.queue;
     if (!q) return;
     const p = $("#staffPanel");
     p.classList.remove("hidden");
 
+    const byOrg = key === "organizations";
     const counts = {};
     for (const t of q.tickets) {
-      const name = (t.assignee && t.assignee.trim()) || "(sem responsável)";
-      if (!counts[name]) counts[name] = { total: 0, waiting: 0, critical: 0 };
-      counts[name].total++;
-      if (t.waitingForTeam) counts[name].waiting++;
-      if (t.priority === "Highest" || t.priority === "High") counts[name].critical++;
+      const groups = byOrg
+        ? (t.organizations && t.organizations.length ? t.organizations : ["(sem organização)"])
+        : [(t.assignee && t.assignee.trim()) || "(sem responsável)"];
+      for (const name of groups) {
+        if (!counts[name]) counts[name] = { total: 0, waiting: 0, critical: 0 };
+        counts[name].total++;
+        if (t.waitingForTeam) counts[name].waiting++;
+        if (t.priority === "Highest" || t.priority === "High") counts[name].critical++;
+      }
     }
     const rows = Object.entries(counts)
       .sort((a, b) => b[1].total - a[1].total)
@@ -274,7 +281,7 @@
     p.innerHTML = `
       <div class="panel">
         <div class="detail-head">
-          <h2>👥 Tickets por atendente</h2>
+          <h2>${byOrg ? "🏢 Tickets por organização" : "👥 Tickets por atendente"}</h2>
           <button class="btn-ghost" data-close>✕</button>
         </div>
         <div class="staff-list">${rows || `<div class="empty">Nenhum ticket.</div>`}</div>
@@ -358,7 +365,8 @@
 
   // ---------- Eventos ----------
   $("#btnNotify").addEventListener("click", enableNotifications);
-  $("#btnStaff").addEventListener("click", showStaff);
+  $("#btnStaff").addEventListener("click", () => showGroupBy("assignee"));
+  $("#btnOrg").addEventListener("click", () => showGroupBy("organizations"));
   $("#btnReload").addEventListener("click", refresh);
   $("#btnPause").addEventListener("click", () => {
     state.paused = !state.paused;
