@@ -18,6 +18,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const routes = {
   "/api/queue": require("./api/queue"),
   "/api/comments": require("./api/comments"),
+  "/api/version": require("./api/version"),
 };
 
 function makeReq(req, urlObj) {

@@ -13,12 +13,16 @@
     paused: false,
     lastSeen: {},
     notifyEnabled: "Notification" in window && Notification.permission === "granted",
+    version: null,
   };
 
   const $ = (s) => document.querySelector(s);
   const $$ = (s) => Array.from(document.querySelectorAll(s));
   const esc = (s) =>
     String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // Escapa e transforma URLs (http/https) em links clicáveis
+  const linkify = (s) =>
+    esc(s).replace(/(https?:\/\/[^\s<"')}\]]+)/g, '<a href="$1" target="_blank" rel="noopener nofollow">$1</a>');
 
   const fmtAgo = (ts) => {
     if (!ts) return "—";
@@ -212,7 +216,7 @@
           <div class="waitbar"><div class="${waitBarCls(t.waitMs)}" style="width:${waitPct(t.waitMs)}%"></div></div>
           <div class="tick-wait">${t.waitingForTeam ? "⏳ Sem resposta ao cliente há " + fmtDur(t.waitMs) : "✔ Última resposta foi ao cliente"}</div>
         </div>
-        ${t.lastActivityText ? `<div class="tick-last"><span class="who">${esc(t.lastActivityBy || "")}</span><span class="txt">${esc(t.lastActivityText)}</span></div>` : ""}
+        ${t.lastActivityText ? `<div class="tick-last"><span class="who">${esc(t.lastActivityBy || "")}</span><span class="txt">${linkify(t.lastActivityText)}</span></div>` : ""}
       </div>`;
     }).join("");
 
@@ -263,7 +267,7 @@
         ? list.map((c) => `<div class="comment-item ${c.isPublic ? "public" : "internal"} ${c.isCustomer ? "customer" : ""}">
             <span class="tag-${c.isPublic ? "public" : "internal"}">${c.isPublic ? "💬 Resposta ao cliente" : "📝 Observação interna"}</span>
             <span class="ca">${esc(c.author)}</span> <span class="ct">· ${fmtDate(c.created)}</span>
-            <div class="cb">${esc(c.body)}</div></div>`).join("")
+            <div class="cb">${linkify(c.body)}</div></div>`).join("")
         : `<div class="comment-item">Sem comentários.</div>`;
     } catch (e) {
       $("#dlgComments").innerHTML = `<div class="comment-item" style="color:var(--red)">Erro: ${esc(e.message)}</div>`;
@@ -451,6 +455,31 @@
   }
 
   // ---------- Carga ----------
+  async function checkVersion() {
+    try {
+      const res = await fetch("/api/version", { cache: "no-store" });
+      const data = await res.json();
+      if (!data.version) return;
+      if (state.version === null) { state.version = data.version; return; }
+      if (data.version !== state.version && !state.upgradeShown) {
+        state.upgradeShown = true;
+        const banner = $("#upgradeBanner");
+        if (banner) banner.classList.remove("hidden");
+        if (state.notifyEnabled && "Notification" in window && Notification.permission === "granted") {
+          try {
+            const n = new Notification("Nova versão do painel", { body: "Atualize para ver a versão mais recente.", tag: "jira-upgrade" });
+            n.onclick = () => { window.focus(); doUpgrade(); n.close(); };
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+  }
+  function doUpgrade() {
+    try { localStorage.removeItem("lastSeen"); } catch (e) {}
+    location.reload();
+  }
+  $("#ubUpdate").addEventListener("click", doUpgrade);
+
   async function refresh() {
     if (state.paused) return;
     try {
@@ -504,6 +533,8 @@
   if ("Notification" in window && Notification.permission === "granted") $("#btnNotify").classList.add("on");
   loadLastSeen();
   refresh();
+  checkVersion();
   renderGroupChip();
   setInterval(refresh, REFRESH);
+  setInterval(checkVersion, Math.max(REFRESH * 2, 60000));
 })();
