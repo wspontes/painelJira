@@ -267,7 +267,7 @@
         ? list.map((c) => `<div class="comment-item ${c.isPublic ? "public" : "internal"} ${c.isCustomer ? "customer" : ""}">
             <span class="tag-${c.isPublic ? "public" : "internal"}">${c.isPublic ? "💬 Resposta ao cliente" : "📝 Observação interna"}</span>
             <span class="ca">${esc(c.author)}</span> <span class="ct">· ${fmtDate(c.created)}</span>
-            <div class="cb">${linkify(c.body)}</div></div>`).join("")
+            <div class="cb${c.bodyHtml ? " rich" : ""}">${c.bodyHtml ? c.bodyHtml : linkify(c.body)}</div></div>`).join("")
         : `<div class="comment-item">Sem comentários.</div>`;
     } catch (e) {
       $("#dlgComments").innerHTML = `<div class="comment-item" style="color:var(--red)">Erro: ${esc(e.message)}</div>`;

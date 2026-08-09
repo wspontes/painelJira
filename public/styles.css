@@ -231,6 +231,7 @@ select#sortSelect {
 .comment-item .ca { color: var(--accent); font-weight: 600; }
 .comment-item .ct { color: var(--muted); font-size: 11px; }
 .comment-item .cb { margin-top: 4px; white-space: pre-wrap; color: var(--text); }
+.comment-item .cb.rich { white-space: normal; }
 .comment-item .cb a { color: var(--blue); text-decoration: underline; overflow-wrap: anywhere; word-break: break-all; }
 .comment-item .cb a:visited { color: var(--blue); }
 .tick-last .txt a { color: var(--blue); text-decoration: underline; }

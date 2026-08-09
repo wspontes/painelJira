@@ -22,9 +22,46 @@ function adfToText(adf) {
     if (!node) return;
     if (node.type === "text" || node.type === "mention" || node.type === "hardBreak" || node.type === "emoji") {
       parts.push(node.text || (node.type === "hardBreak" ? "\n" : "") || "");
+    } else if (node.type === "inlineCard" || node.type === "blockCard") {
+      if (node.attrs && node.attrs.url) parts.push(node.attrs.url);
     } else if (node.type === "paragraph" || node.type === "heading" || node.type === "listItem") {
       parts.push("\n");
     }
+    if (Array.isArray(node.content)) node.content.forEach(walk);
+  };
+  adf.content.forEach(walk);
+  return parts.join("").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+function escHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// Converte ADF em HTML seguro, preservando links (mesmo os mascarados via mark "link").
+function adfToHtml(adf) {
+  if (typeof adf === "string") return escHtml(adf).replace(/\n/g, "<br>");
+  if (!adf || !Array.isArray(adf.content)) return "";
+  const parts = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (node.type === "hardBreak") { parts.push("<br>"); return; }
+    if (node.type === "inlineCard" || node.type === "blockCard") {
+      const href = node.attrs && node.attrs.url;
+      if (href) parts.push(`<a href="${escHtml(href)}" target="_blank" rel="noopener">${escHtml(href)}</a>`);
+      return;
+    }
+    if (node.type === "text" || node.type === "mention" || node.type === "emoji") {
+      let text = node.text || "";
+      if (node.type === "mention") text = "@" + text;
+      const linkMark = Array.isArray(node.marks) && node.marks.find((m) => m && m.type === "link" && m.attrs && m.attrs.href);
+      if (node.type === "text" && linkMark) {
+        parts.push(`<a href="${escHtml(linkMark.attrs.href)}" target="_blank" rel="noopener">${escHtml(text)}</a>`);
+      } else {
+        parts.push(escHtml(text));
+      }
+      return;
+    }
+    if (node.type === "paragraph" || node.type === "heading" || node.type === "listItem") parts.push("\n");
     if (Array.isArray(node.content)) node.content.forEach(walk);
   };
   adf.content.forEach(walk);
@@ -42,4 +79,4 @@ function isBot(user) {
   return n.includes("automation") || n.includes("bot") || n.includes("slack") || user.accountType === "app";
 }
 
-module.exports = { getAuth, jiraFetch, adfToText, isCustomer, isBot };
+module.exports = { getAuth, jiraFetch, adfToText, adfToHtml, isCustomer, isBot };

@@ -1,5 +1,5 @@
 // GET /api/comments?key=SUP-123
-const { getAuth, adfToText, isCustomer } = require("./_helpers");
+const { getAuth, adfToText, adfToHtml, isCustomer } = require("./_helpers");
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -31,6 +31,7 @@ module.exports = async function handler(req, res) {
         email: author.emailAddress || null,
         created: c.created ? new Date(c.created).getTime() : null,
         body: adfToText(c.body),
+        bodyHtml: adfToHtml(c.body),
         isCustomer: isCustomerUser,
         isPublic: c.jsdPublic === true, // false = observação interna
       };
