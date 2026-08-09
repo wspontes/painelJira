@@ -9,7 +9,7 @@
     filter: "all",
     sort: "wait",
     search: "",
-    orgFilter: "",
+    group: null, // { type: "org" | "assignee", value: string }
     paused: false,
     lastSeen: {},
     notifyEnabled: "Notification" in window && Notification.permission === "granted",
@@ -146,11 +146,15 @@
       case "waiting": list = list.filter((t) => t.waitingForTeam); break;
       case "critical": list = list.filter((t) => t.priority === "Highest" || t.priority === "High"); break;
     }
-    if (state.orgFilter) {
-      const org = state.orgFilter;
+    if (state.group) {
+      const { type, value } = state.group;
       list = list.filter((t) => {
-        const orgs = t.organizations || [];
-        return org === "(sem organização)" ? !orgs.length : orgs.includes(org);
+        if (type === "org") {
+          const orgs = t.organizations || [];
+          return value === "(sem organização)" ? !orgs.length : orgs.includes(value);
+        }
+        const name = (t.assignee && t.assignee.trim()) || "(sem responsável)";
+        return value === "(sem responsável)" ? name === "(sem responsável)" : name === value;
       });
     }
     switch (state.sort) {
@@ -158,6 +162,7 @@
       case "priority": list.sort((a, b) => (PRIO[a.priority] ?? 9) - (PRIO[b.priority] ?? 9)); break;
       case "newest": list.sort((a, b) => b.created - a.created); break;
       case "oldest": list.sort((a, b) => a.created - b.created); break;
+      case "activity": list.sort((a, b) => (a.lastActivityMs || 0) - (b.lastActivityMs || 0)); break;
     }
 
     const wrap = $("#tickets");
@@ -302,33 +307,24 @@
       row.addEventListener("click", () => {
         const name = row.dataset.name;
         p.classList.add("hidden");
-        if (byOrg) {
-          state.orgFilter = name;
-          renderTickets();
-          renderOrgChip();
-        } else {
-          clearSearch(name);
-        }
+        state.group = { type: byOrg ? "org" : "assignee", value: name };
+        renderTickets();
+        renderGroupChip();
       });
     });
   }
 
-  function clearSearch(name) {
-    $("#search").value = name;
-    state.search = name;
-    renderTickets();
-  }
-
-  // Chip ativo do filtro por organização
-  function renderOrgChip() {
-    const strip = $("#orgFilterStrip");
+  // Chip ativo do filtro por atendente/organização
+  function renderGroupChip() {
+    const strip = $("#groupFilterStrip");
     if (!strip) return;
-    if (!state.orgFilter) { strip.innerHTML = ""; return; }
-    strip.innerHTML = `<button class="chip active" data-clear-org>🏢 ${esc(state.orgFilter)} ✕</button>`;
-    strip.querySelector("[data-clear-org]").addEventListener("click", () => {
-      state.orgFilter = "";
+    if (!state.group) { strip.innerHTML = ""; return; }
+    const icon = state.group.type === "org" ? "🏢" : "👥";
+    strip.innerHTML = `<button class="chip active" data-clear-group>${icon} ${esc(state.group.value)} ✕</button>`;
+    strip.querySelector("[data-clear-group]").addEventListener("click", () => {
+      state.group = null;
       renderTickets();
-      renderOrgChip();
+      renderGroupChip();
     });
   }
 
@@ -406,8 +402,8 @@
     c.classList.add("active");
     state.filter = c.dataset.filter;
     if (c.dataset.filter === "all") {
-      state.orgFilter = "";
-      renderOrgChip();
+      state.group = null;
+      renderGroupChip();
     }
     renderTickets();
   }));
@@ -417,6 +413,6 @@
   if ("Notification" in window && Notification.permission === "granted") $("#btnNotify").classList.add("on");
   loadLastSeen();
   refresh();
-  renderOrgChip();
+  renderGroupChip();
   setInterval(refresh, REFRESH);
 })();
