@@ -43,6 +43,15 @@
   const fmtDate = (ts) => new Date(ts).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
   const PRIO = { Highest: 0, High: 1, Medium: 2, Low: 3, Lowest: 4 };
 
+  // Links rapidos (configuraveis) — editar aqui
+  const LINKS = [
+    { label: "Sportsbook", url: "https://sdk.sandbox-ngx.bet/", icon: "\u26BD" },
+    { label: "Alpha", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=ALPHA_2025&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTo2OTllYTNjYy1iNGY3LTQ2MWItODQxZC1lNjM2ZDZjYmJkOTgiLCJNIjoiUHVibGljIn0%3D&start=PT1H&end=null&autoRefresh=60", icon: "\u26A1" },
+    { label: "Delta", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=DELTA&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTpjYjhmYzU4My1mZWY1LTQzMmUtOTlkNS1lNGE1ZTdiMzk0ZDMiLCJPIjoiYXJuOmF3czppYW06OjAxMDc5NzEzNTY4NTpyb2xlL3NlcnZpY2Utcm9sZS9DV0RCU2hhcmluZy1QdWJsaWNSZWFkT25seUFjY2Vzcy1MUDNIMzJBTCIsIk0iOiJQdWJsaWMifQ%3D%3D&start=PT1H&end=null&autoRefresh=60", icon: "\uD83D\uDD3A" },
+    { label: "Vip 1", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=VIP1&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTo3NmQ1M2JlOS1jZGZiLTQzYzItYmEwYS1hYWJhNjUyNDViM2QiLCJNIjoiUHVibGljIn0%3D&start=PT1H&end=null&autoRefresh=60", icon: "\uD83D\uDC8E" },
+    { label: "Loterias", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=LOTERIAS&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMToyZDBjYWYyMC1lNTZlLTRiMWMtOGFiYS0wN2U0ODg2MjdlMDAiLCJNIjoiUHVibGljIn0%3D&autoRefresh=60&start=PT1H&end=null", icon: "\uD83C\uDFB0" },
+  ];
+
   function setStatus(text, kind) {
     const el = $("#statusText");
     if (el) el.textContent = text;
@@ -328,6 +337,28 @@
     });
   }
 
+  // ---------- Painel de links ----------
+  function showLinks() {
+    const p = $("#linksPanel");
+    p.classList.remove("hidden");
+    p.innerHTML = `
+      <div class="panel">
+        <div class="detail-head">
+          <div><h2>🔗 Links — Sistemas</h2><div class="dp-meta"><span><b>Atalhos</b> para os ambientes da equipe</span></div></div>
+          <button class="btn-ghost" data-close>✕</button>
+        </div>
+        <div class="links-list">${LINKS.map((l) => `
+          <a class="link-row" href="${esc(l.url)}" target="_blank" rel="noopener">
+            <span class="link-icon">${l.icon}</span>
+            <span class="link-label">${esc(l.label)}</span>
+            <span class="link-go">↗</span>
+          </a>`).join("")}</div>
+        <div class="dp-actions"><button class="btn-ghost" data-close>Fechar</button></div>
+      </div>`;
+    p.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => p.classList.add("hidden")));
+    p.addEventListener("click", (e) => { if (e.target === p) p.classList.add("hidden"); });
+  }
+
   // ---------- Detecção de mudanças ----------
   // Notifica APENAS quando um ticket NOVO sem resposta da equipe entra na fila.
   function seed(q) {
@@ -390,7 +421,7 @@
   $("#btnNotify").addEventListener("click", enableNotifications);
   $("#btnStaff").addEventListener("click", () => showGroupBy("assignee"));
   $("#btnOrg").addEventListener("click", () => showGroupBy("organizations"));
-  $("#btnReload").addEventListener("click", refresh);
+  $("#btnLinks").addEventListener("click", showLinks);
   $("#btnPause").addEventListener("click", () => {
     state.paused = !state.paused;
     $("#btnPause").classList.toggle("on", state.paused);
