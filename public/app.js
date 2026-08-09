@@ -45,11 +45,12 @@
 
   // Links rapidos (configuraveis) — editar aqui
   const LINKS = [
-    { label: "Sportsbook", url: "https://sdk.sandbox-ngx.bet/", icon: "\u26BD" },
+    { label: "Sportsbook", url: "https://sdk.sandbox-ngx.bet/", icon: "\u26BD", mobile: true },
     { label: "Alpha", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=ALPHA_2025&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTo2OTllYTNjYy1iNGY3LTQ2MWItODQxZC1lNjM2ZDZjYmJkOTgiLCJNIjoiUHVibGljIn0%3D&start=PT1H&end=null&autoRefresh=60", icon: "\u26A1" },
     { label: "Delta", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=DELTA&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTpjYjhmYzU4My1mZWY1LTQzMmUtOTlkNS1lNGE1ZTdiMzk0ZDMiLCJPIjoiYXJuOmF3czppYW06OjAxMDc5NzEzNTY4NTpyb2xlL3NlcnZpY2Utcm9sZS9DV0RCU2hhcmluZy1QdWJsaWNSZWFkT25seUFjY2Vzcy1MUDNIMzJBTCIsIk0iOiJQdWJsaWMifQ%3D%3D&start=PT1H&end=null&autoRefresh=60", icon: "\uD83D\uDD3A" },
     { label: "Vip 1", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=VIP1&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMTo3NmQ1M2JlOS1jZGZiLTQzYzItYmEwYS1hYWJhNjUyNDViM2QiLCJNIjoiUHVibGljIn0%3D&start=PT1H&end=null&autoRefresh=60", icon: "\uD83D\uDC8E" },
     { label: "Loterias", url: "https://cloudwatch.amazonaws.com/dashboard.html?dashboard=LOTERIAS&context=eyJSIjoidXMtZWFzdC0xIiwiRCI6ImN3LWRiLTAxMDc5NzEzNTY4NSIsIlUiOiJ1cy1lYXN0LTFfUjZ6QXhXeEpUIiwiQyI6IjFrNTc3MmVkdnFhY3ZhOWE4aHM4MDFhOG5mIiwiSSI6InVzLWVhc3QtMToyZDBjYWYyMC1lNTZlLTRiMWMtOGFiYS0wN2U0ODg2MjdlMDAiLCJNIjoiUHVibGljIn0%3D&autoRefresh=60&start=PT1H&end=null", icon: "\uD83C\uDFB0" },
+    { label: "Comtele", url: "https://portal.comtele.com.br/reports?sendMessages=true", icon: "\uD83D\uDCF1", mobile: true },
   ];
 
   function setStatus(text, kind) {
@@ -348,15 +349,66 @@
           <button class="btn-ghost" data-close>✕</button>
         </div>
         <div class="links-list">${LINKS.map((l) => `
-          <a class="link-row" href="${esc(l.url)}" target="_blank" rel="noopener">
+          <div class="link-row" role="link" tabindex="0" data-url="${esc(l.url)}" data-label="${esc(l.label)}" data-mobile="${l.mobile ? "1" : "0"}">
             <span class="link-icon">${l.icon}</span>
             <span class="link-label">${esc(l.label)}</span>
             <span class="link-go">↗</span>
-          </a>`).join("")}</div>
+          </div>`).join("")}</div>
         <div class="dp-actions"><button class="btn-ghost" data-close>Fechar</button></div>
       </div>`;
     p.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => p.classList.add("hidden")));
     p.addEventListener("click", (e) => { if (e.target === p) p.classList.add("hidden"); });
+    p.querySelectorAll(".link-row").forEach((row) => {
+      const url = row.dataset.url;
+      const label = row.dataset.label;
+      const isMobile = row.dataset.mobile === "1";
+      const open = () => openLinkViewer(url, label, isMobile);
+      row.addEventListener("click", open);
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+      });
+    });
+  }
+
+  // ---------- Visualizador de links (tela cheia) ----------
+  // CloudWatch (Alpha/Delta/Vip 1/Loterias) nao tem layout mobile:
+  // renderizamos em largura desktop e escalamos para caber na tela.
+  const DESK = 1280;
+  let curMobile = false;
+  function fitFrame() {
+    const stage = $("#lvStage");
+    const frame = $("#lvFrame");
+    if (!stage || !frame || !frame.src || frame.src === "about:blank") return;
+    const avail = stage.clientWidth;
+    if (avail < 1) return;
+    // Mobile nativo: usa 100% da largura, sem escala desktop
+    if (curMobile || avail >= DESK) {
+      frame.style.width = "100%";
+      frame.style.height = "100%";
+      frame.style.transform = "none";
+      return;
+    }
+    const scale = avail / DESK;
+    frame.style.width = DESK + "px";
+    frame.style.height = stage.clientHeight / scale + "px";
+    frame.style.transform = `scale(${scale})`;
+  }
+  function openLinkViewer(url, label, isMobile) {
+    const v = $("#linkViewer");
+    v.classList.remove("hidden");
+    curMobile = !!isMobile;
+    $("#lvTitle").textContent = label || "—";
+    $("#lvFrame").src = url;
+    $("#lvExt").onclick = () => { window.open(url, "_blank", "noopener"); };
+    window.addEventListener("resize", fitFrame);
+    setTimeout(fitFrame, 30);
+    setTimeout(fitFrame, 600);
+  }
+  function closeLinkViewer() {
+    const v = $("#linkViewer");
+    v.classList.add("hidden");
+    setTimeout(() => { $("#lvFrame").src = "about:blank"; }, 250);
+    window.removeEventListener("resize", fitFrame);
   }
 
   // ---------- Detecção de mudanças ----------
@@ -422,6 +474,14 @@
   $("#btnStaff").addEventListener("click", () => showGroupBy("assignee"));
   $("#btnOrg").addEventListener("click", () => showGroupBy("organizations"));
   $("#btnLinks").addEventListener("click", showLinks);
+  $("#lvClose").addEventListener("click", closeLinkViewer);
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const v = $("#linkViewer");
+      if (v && !v.classList.contains("hidden")) closeLinkViewer();
+      else if ($("#linksPanel") && !$("#linksPanel").classList.contains("hidden")) $("#linksPanel").classList.add("hidden");
+    }
+  });
   $("#btnPause").addEventListener("click", () => {
     state.paused = !state.paused;
     $("#btnPause").classList.toggle("on", state.paused);
