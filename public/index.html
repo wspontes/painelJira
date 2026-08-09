@@ -60,6 +60,19 @@
 
   <footer class="site-footer">Desenvolvido por Weslley Silva Pontes</footer>
 
+  <div id="linkViewer" class="link-viewer hidden">
+    <div class="lv-head">
+      <span class="lv-title" id="lvTitle">—</span>
+      <span class="lv-actions">
+        <button class="btn-ghost" id="lvExt" title="Abrir em nova aba">⤢ Nova aba</button>
+        <button class="btn-ghost lv-close" id="lvClose" title="Fechar">✕</button>
+      </span>
+    </div>
+    <div class="lv-stage" id="lvStage">
+      <iframe id="lvFrame" class="lv-frame" title="Visualizador" allowfullscreen></iframe>
+    </div>
+  </div>
+
   <div id="toasts" class="toasts"></div>
 
   <script src="app.js"></script>
