@@ -442,11 +442,26 @@
     const nowMap = {};
     let changed = false;
     for (const t of q.tickets) {
-      nowMap[t.key] = { lastActivityMs: t.lastActivityMs, waitMs: t.waitMs, created: t.created };
+      nowMap[t.key] = {
+        lastActivityMs: t.lastActivityMs,
+        waitMs: t.waitMs,
+        created: t.created,
+        lastActivityIsCustomer: t.lastActivityIsCustomer,
+        lastActivityType: t.lastActivityType,
+        lastActivityBy: t.lastActivityBy,
+      };
       const p = prev[t.key];
       if (!p && t.waitingForTeam && t.waitMs > 0) {
         // Um ticket realmente NOVO (nunca visto nesta máquina) aguardando resposta
         notify("Novo ticket sem resposta", `${t.key} — ${t.summary.slice(0, 90)}`, "", t);
+        changed = true;
+        continue;
+      }
+      if (p && t.lastActivityMs && t.lastActivityMs !== p.lastActivityMs && t.lastActivityIsCustomer) {
+        // Cliente retornou no ticket (novo comentário público do cliente)
+        const who = t.lastActivityBy || "Cliente";
+        const snippet = (t.lastActivityText || "").slice(0, 90);
+        notify("Cliente adicionou novas informações", `${t.key} — ${t.summary.slice(0, 60)}${snippet ? " — " + snippet : ""}`, "", t);
         changed = true;
       }
     }
