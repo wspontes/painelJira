@@ -19,6 +19,7 @@ const routes = {
   "/api/queue": require("./api/queue"),
   "/api/comments": require("./api/comments"),
   "/api/version": require("./api/version"),
+  "/api/agent-view": require("./api/agent-view"),
 };
 
 function makeReq(req, urlObj) {

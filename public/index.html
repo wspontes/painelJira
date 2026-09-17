@@ -23,6 +23,7 @@
       </div>
       <button id="btnLinks" class="btn-ghost" title="Links dos sistemas">🔗 Links</button>
       <button id="btnNotify" class="btn-ghost" title="Habilitar notificações do navegador">🔔 Notificações</button>
+      <button id="btnSound" class="btn-ghost" title="Escolher som de notificação">🔊 Som</button>
       <button id="btnPause" class="btn-ghost" title="Pausar auto-atualização">⏸ Pausar</button>
     </div>
   </header>
@@ -46,6 +47,7 @@
       </select>
       <button class="btn-ghost" id="btnStaff" title="Tickets por atendente">👥 Por atendente</button>
       <button class="btn-ghost" id="btnOrg" title="Tickets por organização">🏢 Por organização</button>
+      <button class="btn-ghost" id="btnAgents" title="Tickets escalados por atendente (N2/N3)">📈 Escalados</button>
       <div id="groupFilterStrip" class="filters"></div>
     </section>
 
@@ -55,10 +57,12 @@
 
     <div id="staffPanel" class="tick-detail hidden"></div>
     <div id="linksPanel" class="tick-detail hidden"></div>
+    <div id="agentsPanel" class="tick-detail hidden"></div>
+    <div id="soundPanel" class="tick-detail hidden"></div>
     <div id="tickDetail" class="tick-detail hidden"></div>
   </main>
 
-  <footer class="site-footer">Desenvolvido por Weslley Silva Pontes</footer>
+  <footer class="site-footer">Desenvolvido por Weslley Silva Pontes · v1.5</footer>
 
   <div id="linkViewer" class="link-viewer hidden">
     <div class="lv-head">

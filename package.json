@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node -e \"const {execSync}=require('child_process'); const fs=require('fs'); const sha=execSync('git rev-parse HEAD').toString().trim(); fs.writeFileSync('version.txt', sha); console.log('Version:', sha);\""
   },
   "engines": {
     "node": ">=18"

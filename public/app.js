@@ -14,6 +14,7 @@
     lastSeen: {},
     notifyEnabled: "Notification" in window && Notification.permission === "granted",
     version: null,
+    soundId: "default", // som selecionado
   };
 
   const $ = (s) => document.querySelector(s);
@@ -76,26 +77,86 @@
   }
 
   function playSound() {
+    const opt = SOUND_OPTIONS.find(s => s.id === state.soundId) || SOUND_OPTIONS[0];
+    if (opt.type === "builtin") {
+      opt.play();
+    } else if (opt.type === "file") {
+      playCustomSound();
+    }
+  }
+
+  // Som específico para "Jira fora do ar" — NÃO configurável pelo usuário
+  function playJiraDownSound() {
+    // Sequência grave e repetida para chamar atenção: tom baixo repetido 4x
+    playBuiltinSound([220, 220, 220, 220], [0.3, 0.3, 0.3, 0.3], 0.4);
+  }
+
+  function playBuiltinSound(freqs, durations, gainVal) {
     try {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
       const ctx = new Ctx();
-      const notes = [880, 1174];
-      notes.forEach((freq, i) => {
+      freqs.forEach((freq, i) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = "sine";
         osc.frequency.value = freq;
-        const t = ctx.currentTime + i * 0.18;
+        const t = ctx.currentTime + (i * 0.2);
+        const dur = durations[i] || 0.2;
         gain.gain.setValueAtTime(0.0001, t);
-        gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+        gain.gain.exponentialRampToValueAtTime(gainVal, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
         osc.start(t);
-        osc.stop(t + 0.18);
+        osc.stop(t + dur);
       });
     } catch (e) { /* navegador sem áudio */ }
+  }
+
+  function playCustomSound() {
+    const audio = new Audio("sounds/bora-trabalhar_notification.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(() => { /* autoplay bloqueado */ });
+  }
+
+  // Opções de som: 3 built-in (Web Audio) + 1 custom MP3
+  const SOUND_OPTIONS = [
+    { id: "default", label: "Padrão (bipe duplo)", type: "builtin", play: playDefaultSound },
+    { id: "alert", label: "Alerta (3 tons)", type: "builtin", play: playAlertSound },
+    { id: "soft", label: "Suave (tom único)", type: "builtin", play: playSoftSound },
+    { id: "custom", label: "Personalizado (Bora Trabalhar)", type: "file", src: "sounds/bora-trabalhar_notification.mp3" },
+  ];
+
+  function playDefaultSound() {
+    playBuiltinSound([880, 1174], [0.18, 0.18], 0.25);
+  }
+  function playAlertSound() {
+    playBuiltinSound([660, 880, 1100], [0.15, 0.15, 0.2], 0.3);
+  }
+  function playSoftSound() {
+    playBuiltinSound([523], [0.4], 0.2);
+  }
+
+  function playCustomSound() {
+    const audio = new Audio("sounds/bora-trabalhar_notification.mp3");
+    audio.volume = 0.5;
+    audio.play().catch(() => { /* autoplay bloqueado */ });
+  }
+
+  function playSound() {
+    const opt = SOUND_OPTIONS.find(s => s.id === state.soundId) || SOUND_OPTIONS[0];
+    if (opt.type === "builtin") {
+      opt.play();
+    } else if (opt.type === "file") {
+      playCustomSound();
+    }
+  }
+
+  // Som específico para "Jira fora do ar" — NÃO configurável pelo usuário
+  function playJiraDownSound() {
+    // Sequência grave e repetida para chamar atenção: tom baixo repetido 4x
+    playBuiltinSound([220, 220, 220, 220], [0.3, 0.3, 0.3, 0.3], 0.4);
   }
 
   async function enableNotifications() {
@@ -208,13 +269,16 @@
         ${t.organizations && t.organizations.length ? `<div class="tick-org">🏢 ${esc(t.organizations.join(", "))}</div>` : ""}
         <div class="tick-title" title="${esc(t.summary)}">${esc(t.summary)}</div>
         <div class="tick-body">
+          ${t.assignee ? `<span class="tick-assignee" title="Responsável">👨‍💻 ${esc(t.assignee)}</span>` : `<span class="tick-assignee empty" title="Sem responsável">👨‍💻 —</span>`}
+        </div>
+        <div class="tick-body">
           <span class="tick-cliente" title="Reportado por">👤 ${esc(t.reporter || "—")}</span>
           <span class="tick-age" title="Criado há">🕐 ${fmtAgo(t.created)}</span>
         </div>
-        ${t.lastActivityMs ? `<div class="tick-lastint">Última interação há ${fmtAgo(t.lastActivityMs)}</div>` : ""}
+        ${t.lastInternalNoteMs ? `<div class="tick-lastint">Última interação em nota interna há ${fmtAgo(t.lastInternalNoteMs)}</div>` : ""}
         <div class="wait ${waitStateCls(t.waitMs)}">
           <div class="waitbar"><div class="${waitBarCls(t.waitMs)}" style="width:${waitPct(t.waitMs)}%"></div></div>
-          <div class="tick-wait">${t.waitingForTeam ? "⏳ Sem resposta ao cliente há " + fmtDur(t.waitMs) : "✔ Última resposta foi ao cliente"}</div>
+          <div class="tick-wait">${t.waitingForTeam ? "⏳ Sem resposta ao cliente há " + fmtDur(t.waitMs) : "✔ Última resposta ao cliente há " + (t.lastTeamPublicReplyMs ? fmtAgo(t.lastTeamPublicReplyMs) : "—")}</div>
         </div>
         ${t.lastActivityText ? `<div class="tick-last"><span class="who">${esc(t.lastActivityBy || "")}</span><span class="txt">${linkify(t.lastActivityText)}</span></div>` : ""}
       </div>`;
@@ -374,6 +438,131 @@
     });
   }
 
+  // ---------- Painel Atendentes (tickets N2/N3 que passaram por cada um) ----------
+  async function showAgentsPanel() {
+    const p = $("#agentsPanel");
+    p.classList.remove("hidden");
+    p.innerHTML = `<div class="panel"><div class="detail-head"><h2>📈 Tickets escalados por atendente</h2><div class="dp-meta"><span><b>N2/N3</b> dos últimos 60 dias que cada atendente já atendeu</span></div><button class="btn-ghost" data-close>✕</button></div><div class="agents-list"><i>Carregando…</i></div><div class="dp-actions"><button class="btn-ghost" data-close>Fechar</button></div></div>`;
+    p.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => p.classList.add("hidden")));
+    p.addEventListener("click", (e) => { if (e.target === p) p.classList.add("hidden"); });
+
+    try {
+      const res = await fetch("/api/agent-view", { cache: "no-store" });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      renderAgentsList(data.agents);
+    } catch (e) {
+      $(".agents-list").innerHTML = `<div class="empty" style="color:var(--red)">Erro: ${esc(e.message)}</div>`;
+    }
+  }
+
+  function renderAgentsList(agents) {
+    const box = $(".agents-list");
+    if (!agents.length) { box.innerHTML = `<div class="empty">Nenhum atendente com tickets N2/N3.</div>`; return; }
+    box.innerHTML = agents.map((a) => `
+      <div class="agent-row" data-account="${esc(a.accountId)}" tabindex="0" role="button">
+        <span class="agent-name">${esc(a.displayName || "—")}</span>
+        <span class="agent-count">${a.tickets.length} tickets</span>
+        <span class="agent-types">${a.tickets.filter(t => t.tipoSuporte === "N2").length} N2 · ${a.tickets.filter(t => t.tipoSuporte === "N3").length} N3</span>
+        <span class="agent-go">↗</span>
+      </div>`).join("");
+    box.querySelectorAll(".agent-row").forEach((row) => {
+      row.addEventListener("click", () => {
+        const acc = row.dataset.account;
+        const agent = agents.find(x => x.accountId === acc);
+        if (agent) renderAgentTickets(agent);
+      });
+      row.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); row.click(); } });
+    });
+  }
+
+  function renderAgentTickets(agent) {
+    const p = $("#agentsPanel");
+    p.innerHTML = `
+      <div class="panel">
+        <div class="detail-head">
+          <h2>📈 ${esc(agent.displayName || "—")} — ${agent.tickets.length} tickets N2/N3</h2>
+          <button class="btn-ghost" data-back>← Voltar</button>
+        </div>
+        <div class="tickets" id="agentTickets">${renderAgentTicketCards(agent.tickets)}</div>
+        <div class="dp-actions"><button class="btn-ghost" data-back>Fechar</button></div>
+      </div>`;
+    p.querySelectorAll("[data-back]").forEach((b) => b.addEventListener("click", showAgentsPanel));
+    p.querySelectorAll(".ticket").forEach((el) => {
+      el.addEventListener("click", () => {
+        const key = el.dataset.key;
+        if (key && state.queue) {
+          const t = state.queue.tickets.find((x) => x.key === key);
+          if (t) showDetail(t);
+        }
+      });
+    });
+  }
+
+  function renderAgentTicketCards(tickets) {
+    if (!tickets.length) return `<div class="empty">Nenhum ticket.</div>`;
+    return tickets.map((t) => {
+      const bord = t.tipoSuporte === "N3" ? "hot" : "warm";
+      return `
+      <div class="ticket ${bord}" data-key="${esc(t.key)}">
+        <div class="tick-head">
+          <span class="trip-key">${esc(t.key)}</span>
+          <span class="status">${esc(t.status || "")}</span>
+          <span class="priority p-${esc(t.tipoSuporte)}">${esc(t.tipoSuporte)}</span>
+        </div>
+        <div class="tick-title" title="${esc(t.summary)}">${esc(t.summary)}</div>
+        <div class="tick-body">
+          <span class="tick-cliente" title="Responsável atual">👤 ${esc(t.currentAssignee || "—")}</span>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  // ---------- Painel de Som ----------
+  function showSoundPanel() {
+    const p = $("#soundPanel");
+    p.classList.remove("hidden");
+    const current = state.soundId;
+    p.innerHTML = `
+      <div class="panel">
+        <div class="detail-head">
+          <h2>🔊 Escolher som de notificação</h2>
+          <button class="btn-ghost" data-close>✕</button>
+        </div>
+        <div class="sound-list">
+          ${SOUND_OPTIONS.map((s) => `
+            <div class="sound-row ${s.id === current ? "active" : ""}" data-id="${s.id}" tabindex="0" role="button">
+              <span class="sound-label">${esc(s.label)}</span>
+              <button class="btn-ghost sound-test" data-test="${s.id}" title="Testar">▶ Testar</button>
+            </div>`).join("")}
+        </div>
+        <div class="dp-actions"><button class="btn-ghost" data-close>Fechar</button></div>
+      </div>`;
+    p.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => p.classList.add("hidden")));
+    p.addEventListener("click", (e) => { if (e.target === p) p.classList.add("hidden"); });
+
+    p.querySelectorAll(".sound-row").forEach((row) => {
+      row.addEventListener("click", (e) => {
+        if (e.target.classList.contains("sound-test")) return;
+        const id = row.dataset.id;
+        state.soundId = id;
+        try { localStorage.setItem("notifySound", id); } catch (e) {}
+        p.querySelectorAll(".sound-row").forEach(r => r.classList.toggle("active", r.dataset.id === id));
+      });
+    });
+    p.querySelectorAll(".sound-test").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.test;
+        const opt = SOUND_OPTIONS.find(s => s.id === id);
+        if (opt) {
+          if (opt.type === "builtin") opt.play();
+          else playCustomSound();
+        }
+      });
+    });
+  }
+
   // ---------- Visualizador de links (tela cheia) ----------
   // CloudWatch (Alpha/Delta/Vip 1/Loterias) nao tem layout mobile:
   // renderizamos em largura desktop e escalamos para caber na tela.
@@ -518,6 +707,8 @@
   $("#btnStaff").addEventListener("click", () => showGroupBy("assignee"));
   $("#btnOrg").addEventListener("click", () => showGroupBy("organizations"));
   $("#btnLinks").addEventListener("click", showLinks);
+  $("#btnAgents").addEventListener("click", showAgentsPanel);
+  $("#btnSound").addEventListener("click", showSoundPanel);
   $("#lvClose").addEventListener("click", closeLinkViewer);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
@@ -546,6 +737,8 @@
   $("#search").addEventListener("input", (e) => { state.search = e.target.value; renderTickets(); });
 
   if ("Notification" in window && Notification.permission === "granted") $("#btnNotify").classList.add("on");
+  // Carrega preferência de som
+  try { const saved = localStorage.getItem("notifySound"); if (saved) state.soundId = saved; } catch (e) {}
   loadLastSeen();
   refresh();
   checkVersion();

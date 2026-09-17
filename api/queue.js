@@ -13,6 +13,7 @@ function buildTicket(issue, comments) {
   let lastCustomerActivity = null; // última resposta pública do cliente
   let lastTeamPublicReply = null;  // última RESPOSTA AO CLIENTE da equipe (jsdPublic=true)
   let lastAny = null;              // último comentário (qualquer)
+  let lastInternalNote = null;     // última observação interna (jsdPublic=false)
 
   for (const c of comments || []) {
     const t = new Date(c.created).getTime();
@@ -33,6 +34,9 @@ function buildTicket(issue, comments) {
     if (isPublic) {
       if (isCust) lastCustomerActivity = t;
       else lastTeamPublicReply = t;
+    } else {
+      // observação interna
+      if (!lastInternalNote || t > lastInternalNote) lastInternalNote = t;
     }
   }
 
@@ -65,6 +69,8 @@ function buildTicket(issue, comments) {
     lastActivityType: lastAny ? lastAny.type : null, // reply | note | auto
     lastActivityIsCustomer: lastAny ? lastAny.isCustomer : false,
     lastActivityText: lastAny && lastAny.text ? lastAny.text.slice(0, 400) : "",
+    lastInternalNoteMs: lastInternalNote, // timestamp da última nota interna
+    lastTeamPublicReplyMs: lastTeamPublicReply, // timestamp da última resposta pública da equipe ao cliente
   };
 }
 
