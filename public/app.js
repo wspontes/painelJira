@@ -694,8 +694,8 @@
       if (data.version !== state.version && !state.upgradeShown) {
         state.upgradeShown = true;
         // Busca changelog se disponível
-        if (data.changelog?.changelog) {
-          state.upgradeChangelog = data.changelog.changelog;
+        if (data.changelog) {
+          state.upgradeChangelog = data.changelog;
         }
         const banner = $("#upgradeBanner");
         if (banner) {
@@ -812,7 +812,7 @@
   // Carrega preferência de som
   try { const saved = localStorage.getItem("notifySound"); if (saved) state.soundId = saved; } catch (e) {}
   // Carrega preferência de tema
-  try { const savedTheme = localStorage.getItem("theme"); if (savedTheme) { state.theme = savedTheme; document.documentElement.setAttribute("data-theme", savedTheme); } } catch (e) {}
+  try { const savedTheme = localStorage.getItem("theme"); if (savedTheme) { state.theme = savedTheme; document.documentElement.setAttribute("data-theme", savedTheme); $("#btnTheme").setAttribute("data-theme", savedTheme); } } catch (e) {}
   loadLastSeen();
   refresh();
   checkVersion();
@@ -824,6 +824,8 @@
     document.documentElement.setAttribute("data-theme", state.theme);
     localStorage.setItem("theme", state.theme);
     $("#btnTheme").textContent = state.theme === "dark" ? "🌙 Tema" : "☀️ Tema";
+    // Update mobile icon via data-theme attribute
+    $("#btnTheme").setAttribute("data-theme", state.theme);
   });
   setInterval(refresh, REFRESH);
   setInterval(checkVersion, Math.max(REFRESH * 2, 60000));

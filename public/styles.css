@@ -232,6 +232,7 @@ select#sortSelect {
 .tick-last { font-size: 11px; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 8px; display: flex; gap: 6px; align-items: baseline; }
 .tick-last .who { color: var(--accent); font-weight: 600; }
 .tick-last .txt { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.tick-last .txt a { color: var(--blue); text-decoration: underline; overflow-wrap: anywhere; word-break: break-all; }
 
 .tick-lastint { font-size: 11px; color: var(--blue); font-weight: 600; }
 
@@ -393,6 +394,9 @@ select#sortSelect {
   .top-actions .btn-ghost::after { font-size: 15px; line-height: 1; }
   #btnLinks::after { content: "🔗"; }
   #btnNotify::after { content: "🔔"; }
+  #btnSound::after { content: "🔊"; }
+  #btnTheme::after { content: "🌙"; }
+  #btnTheme[data-theme="light"]::after { content: "☀️"; }
   #btnPause::after { content: "⏸"; }
   #btnPause.btn-ghost.on::after { content: "▶"; }
   .btn-ghost { padding: 8px 10px; }
