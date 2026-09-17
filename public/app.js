@@ -15,6 +15,9 @@
     notifyEnabled: "Notification" in window && Notification.permission === "granted",
     version: null,
     soundId: "default", // som selecionado
+    theme: "dark", // "dark" | "light"
+    refreshCountdown: REFRESH,
+    upgradeChangelog: null,
   };
 
   const $ = (s) => document.querySelector(s);
@@ -63,6 +66,29 @@
     if (el) el.textContent = text;
     const dot = $("#status-dot");
     if (dot) dot.className = "dot " + (kind || "");
+  }
+
+  function updateCountdown() {
+    if (state.paused) return;
+    const el = $("#refreshCountdown");
+    if (el) {
+      const sec = Math.ceil(state.refreshCountdown / 1000);
+      el.textContent = `↻ ${sec}s`;
+    }
+  }
+
+  function startCountdown() {
+    if (state.countdownInterval) clearInterval(state.countdownInterval);
+    state.refreshCountdown = REFRESH;
+    updateCountdown();
+    state.countdownInterval = setInterval(() => {
+      if (state.paused) return;
+      state.refreshCountdown -= 1000;
+      if (state.refreshCountdown <= 0) {
+        state.refreshCountdown = REFRESH;
+      }
+      updateCountdown();
+    }, 1000);
   }
 
   function toast(html, kind) {
@@ -667,8 +693,20 @@
       if (state.version === null) { state.version = data.version; return; }
       if (data.version !== state.version && !state.upgradeShown) {
         state.upgradeShown = true;
+        // Busca changelog se disponível
+        if (data.changelog?.changelog) {
+          state.upgradeChangelog = data.changelog.changelog;
+        }
         const banner = $("#upgradeBanner");
-        if (banner) banner.classList.remove("hidden");
+        if (banner) {
+          banner.classList.remove("hidden");
+          // Atualiza o banner com changelog se disponível
+          const txt = banner.querySelector(".ub-txt");
+          if (txt && state.upgradeChangelog) {
+            txt.innerHTML = `🆕 Nova versão disponível <button class="ub-details" style="margin-left:8px;padding:2px 8px;background:rgba(0,0,0,.2);border:none;border-radius:4px;cursor:pointer;">Ver novidades</button>`;
+            banner.querySelector(".ub-details").addEventListener("click", showUpgradeDetails);
+          }
+        }
         if (state.notifyEnabled && "Notification" in window && Notification.permission === "granted") {
           try {
             const n = new Notification("Nova versão do painel", { body: "Atualize para ver a versão mais recente.", tag: "jira-upgrade" });
@@ -677,6 +715,33 @@
         }
       }
     } catch (e) {}
+  }
+
+  function showUpgradeDetails() {
+    if (!state.upgradeChangelog) return;
+    const p = $("#linksPanel"); // reusa o painel
+    p.classList.remove("hidden");
+    p.innerHTML = `
+      <div class="panel">
+        <div class="detail-head">
+          <h2>📋 Novidades da versão</h2>
+          <button class="btn-ghost" data-close>✕</button>
+        </div>
+        <div class="changelog" style="max-height:60vh;overflow:auto;padding:8px 0;">
+          ${state.upgradeChangelog.map((item, i) => `
+            <div style="margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+              <div style="font-weight:600;color:var(--accent);">${esc(item.type)}: ${esc(item.title)}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:4px;">${esc(item.description)}</div>
+            </div>
+          `).join("")}
+        </div>
+        <div class="dp-actions">
+          <button class="btn-ghost" data-close>Fechar</button>
+          <button class="btn-ghost" id="ubUpdateNow">Atualizar agora</button>
+        </div>`;
+    p.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => p.classList.add("hidden")));
+    p.addEventListener("click", (e) => { if (e.target === p) p.classList.add("hidden"); });
+    $("#ubUpdateNow").addEventListener("click", doUpgrade);
   }
   function doUpgrade() {
     try { localStorage.removeItem("lastSeen"); } catch (e) {}
@@ -697,6 +762,8 @@
       renderSummary(data.queue);
       renderTickets();
       setStatus("✓ atualizado " + new Date(data.generatedAt).toLocaleTimeString(), "ok");
+      state.refreshCountdown = REFRESH;
+      updateCountdown();
     } catch (e) {
       setStatus("Erro: " + e.message, "err");
     }
@@ -713,8 +780,13 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
       const v = $("#linkViewer");
-      if (v && !v.classList.contains("hidden")) closeLinkViewer();
-      else if ($("#linksPanel") && !$("#linksPanel").classList.contains("hidden")) $("#linksPanel").classList.add("hidden");
+      if (v && !v.classList.contains("hidden")) { closeLinkViewer(); return; }
+      if ($("#linksPanel") && !$("#linksPanel").classList.contains("hidden")) { $("#linksPanel").classList.add("hidden"); return; }
+      if ($("#agentsPanel") && !$("#agentsPanel").classList.contains("hidden")) { $("#agentsPanel").classList.add("hidden"); return; }
+      if ($("#soundPanel") && !$("#soundPanel").classList.contains("hidden")) { $("#soundPanel").classList.add("hidden"); return; }
+      if ($("#staffPanel") && !$("#staffPanel").classList.contains("hidden")) { $("#staffPanel").classList.add("hidden"); return; }
+      if ($("#tickDetail") && !$("#tickDetail").classList.contains("hidden")) { $("#tickDetail").classList.add("hidden"); return; }
+      if ($("#upgradeBanner") && !$("#upgradeBanner").classList.contains("hidden")) { $("#upgradeBanner").classList.add("hidden"); return; }
     }
   });
   $("#btnPause").addEventListener("click", () => {
@@ -739,10 +811,20 @@
   if ("Notification" in window && Notification.permission === "granted") $("#btnNotify").classList.add("on");
   // Carrega preferência de som
   try { const saved = localStorage.getItem("notifySound"); if (saved) state.soundId = saved; } catch (e) {}
+  // Carrega preferência de tema
+  try { const savedTheme = localStorage.getItem("theme"); if (savedTheme) { state.theme = savedTheme; document.documentElement.setAttribute("data-theme", savedTheme); } } catch (e) {}
   loadLastSeen();
   refresh();
   checkVersion();
   renderGroupChip();
+  startCountdown();
+  // Theme toggle
+  $("#btnTheme").addEventListener("click", () => {
+    state.theme = state.theme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", state.theme);
+    localStorage.setItem("theme", state.theme);
+    $("#btnTheme").textContent = state.theme === "dark" ? "🌙 Tema" : "☀️ Tema";
+  });
   setInterval(refresh, REFRESH);
   setInterval(checkVersion, Math.max(REFRESH * 2, 60000));
 })();
