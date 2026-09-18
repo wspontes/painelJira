@@ -33,6 +33,31 @@ function adfToText(adf) {
   return parts.join("").replace(/\n{3,}/g, "\n\n").trim();
 }
 
+// Extrai TODAS as URLs do ADF (text marks link, inlineCard, blockCard)
+function adfExtractUrls(adf) {
+  if (typeof adf === "string") {
+    const urls = adf.match(/https?:\/\/[^\s<>"'}]+/g);
+    return urls || [];
+  }
+  if (!adf || !Array.isArray(adf.content)) return [];
+  const urls = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (node.type === "text" && Array.isArray(node.marks)) {
+      for (const mark of node.marks) {
+        if (mark && mark.type === "link" && mark.attrs && mark.attrs.href) {
+          urls.push(mark.attrs.href);
+        }
+      }
+    } else if (node.type === "inlineCard" || node.type === "blockCard") {
+      if (node.attrs && node.attrs.url) urls.push(node.attrs.url);
+    }
+    if (Array.isArray(node.content)) node.content.forEach(walk);
+  };
+  adf.content.forEach(walk);
+  return urls;
+}
+
 function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
@@ -79,4 +104,4 @@ function isBot(user) {
   return n.includes("automation") || n.includes("bot") || n.includes("slack") || user.accountType === "app";
 }
 
-module.exports = { getAuth, jiraFetch, adfToText, adfToHtml, isCustomer, isBot };
+module.exports = { getAuth, jiraFetch, adfToText, adfToHtml, adfExtractUrls, isCustomer, isBot };

@@ -1,5 +1,5 @@
 // GET /api/queue — visão consolidada da fila (count, resumo, tempo sem resposta).
-const { getAuth, jiraFetch, adfToText, isCustomer, isBot } = require("./_helpers");
+const { getAuth, jiraFetch, adfToText, adfExtractUrls, isCustomer, isBot } = require("./_helpers");
 
 let memoryCache = null;
 const CACHE_TTL_MS = 15000;
@@ -14,6 +14,7 @@ function buildTicket(issue, comments) {
   let lastTeamPublicReply = null;  // última RESPOSTA AO CLIENTE da equipe (jsdPublic=true)
   let lastAny = null;              // último comentário (qualquer)
   let lastInternalNote = null;     // última observação interna (jsdPublic=false)
+  let allCommentsText = [];        // todos os textos dos comentários para busca
 
   for (const c of comments || []) {
     const t = new Date(c.created).getTime();
@@ -30,6 +31,7 @@ function buildTicket(issue, comments) {
       type: isBotC ? "auto" : isPublic ? "reply" : "note",
       isCustomer: isCust,
     };
+    if (text) allCommentsText.push(text);
     if (isBotC) continue;
     if (isPublic) {
       if (isCust) lastCustomerActivity = t;
@@ -59,6 +61,9 @@ function buildTicket(issue, comments) {
     reporter: reporter.displayName || "(automático)",
     assignee: f.assignee ? f.assignee.displayName : null,
     organizations: (Array.isArray(f.customfield_10002) ? f.customfield_10002.map((o) => o && o.name) : []).filter(Boolean),
+    description: f.description ? (typeof f.description === "string" ? f.description : adfToText(f.description)) : "",
+    descriptionUrls: f.description ? adfExtractUrls(f.description) : [],
+    commentsText: allCommentsText.join("\n\n"), // todos os comentários concatenados para busca
     created,
     updated: new Date(f.updated).getTime(),
     ageMs: now - created,
@@ -98,7 +103,7 @@ async function fetchIssues(cfg, jql) {
   const issues = [];
   let pageToken = "";
   for (let page = 0; page < 10; page++) {
-    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,priority,reporter,assignee,created,updated,status,labels,customfield_10002`;
+    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,priority,reporter,assignee,created,updated,status,labels,customfield_10002,description`;
     if (pageToken) path += `&nextPageToken=${encodeURIComponent(pageToken)}`;
     const res = await jiraFetch(cfg, path);
     if (!res.ok) {

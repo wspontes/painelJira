@@ -241,7 +241,7 @@
     const term = state.search.trim().toLowerCase();
     if (term) {
       list = list.filter((t) =>
-        [t.key, t.summary, t.reporter, t.assignee, t.status].some((v) => (v || "").toLowerCase().includes(term)));
+        [t.key, t.summary, t.description, t.commentsText, ...(t.descriptionUrls || [])].some((v) => (v || "").toLowerCase().includes(term)));
     }
     switch (state.filter) {
       case "waiting": list = list.filter((t) => t.waitingForTeam); break;
