@@ -54,10 +54,11 @@ async function fetchIssues(cfg, jql, maxPages = 1) {
   const issues = [];
   let pageToken = "";
   for (let page = 0; page < maxPages; page++) {
-    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,description`;
+    // Reduced maxResults from 50 to 25 to speed up query
+    let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=25&fields=summary,description`;
     if (pageToken) path += `&nextPageToken=${encodeURIComponent(pageToken)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
     try {
       const res = await jiraFetch(cfg, path, { signal: controller.signal });
       clearTimeout(timeoutId);
