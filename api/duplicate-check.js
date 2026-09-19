@@ -1,6 +1,9 @@
 // GET /api/duplicate-check — verifica tickets duplicados por ID de aposta/transação
 const { getAuth, jiraFetch, extractAllIds } = require("./_helpers");
 
+let duplicateCache = null;
+const CACHE_TTL_MS = 60000; // 60s cache
+
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "no-store");
@@ -11,16 +14,18 @@ module.exports = async function handler(req, res) {
     const cfg = getAuth(req);
     if (!cfg) return res.status(401).json({ error: "Credenciais Jira não configuradas." });
     
-    // Pega apenas tickets N1 (usa JQL do ambiente)
     const jql = (process.env.JQL || "").trim();
     if (!jql) return res.status(400).json({ error: "JQL não configurada." });
     
-    // Reutiliza cache da queue API se disponível
-    // Como não temos acesso direto ao cache da queue, fazemos uma busca simplificada
-    // Apenas 1 página (50 tickets) para evitar timeout
+    // Check cache first
+    const now = Date.now();
+    if (duplicateCache && now - duplicateCache.at < CACHE_TTL_MS) {
+      return res.json({ cached: true, generatedAt: duplicateCache.at, duplicates: duplicateCache.duplicates });
+    }
+    
+    // Fetch only 1 page (50 tickets) with short timeout
     const issues = await fetchIssues(cfg, jql, 1);
     
-    // Mapa: UUID -> array de tickets que contêm esse ID
     const idToTickets = new Map();
     
     for (const issue of issues) {
@@ -36,7 +41,6 @@ module.exports = async function handler(req, res) {
       }
     }
     
-    // Filtra apenas IDs que aparecem em mais de 1 ticket
     const duplicates = {};
     for (const [id, tickets] of idToTickets.entries()) {
       if (tickets.length > 1) {
@@ -44,6 +48,7 @@ module.exports = async function handler(req, res) {
       }
     }
     
+    duplicateCache = { at: Date.now(), duplicates };
     return res.json({ cached: false, generatedAt: Date.now(), duplicates });
     
   } catch (e) {
@@ -58,7 +63,7 @@ async function fetchIssues(cfg, jql, maxPages = 1) {
     let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,description`;
     if (pageToken) path += `&nextPageToken=${encodeURIComponent(pageToken)}`;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
       const res = await jiraFetch(cfg, path, { signal: controller.signal });
       clearTimeout(timeoutId);
