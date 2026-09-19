@@ -269,6 +269,19 @@
     const wrap = $("#tickets");
     if (!list.length) { wrap.innerHTML = `<div class="empty">Nenhum ticket encontrado.</div>`; return; }
 
+    // Mapa id de aposta/transação -> tickets (usa a fila completa, não só o filtro atual)
+    const dupMap = {};
+    for (const t of q.tickets) {
+      const ids = Array.isArray(t.betTransactionIds) ? t.betTransactionIds : [];
+      for (const e of ids) {
+        const id = (e && e.id ? e.id : e);
+        if (!id) continue;
+        const k = String(id).toLowerCase();
+        if (!dupMap[k]) dupMap[k] = [];
+        if (!dupMap[k].includes(t.key)) dupMap[k].push(t.key);
+      }
+    }
+
     wrap.innerHTML = list.map((t) => {
       const bord = t.waitMs >= 12 * 3600000 ? "hot" : t.waitMs >= 4 * 3600000 ? "warm" : "cool";
       // Tipos de última atividade
@@ -284,6 +297,17 @@
           : isAuto
             ? `<span class="tick-type auto" title="Automação">🤖 Automação</span>`
             : "";
+      const ids = Array.isArray(t.betTransactionIds) ? t.betTransactionIds : [];
+      const dupKeys = [];
+      for (const e of ids) {
+        const id = (e && e.id ? e.id : e);
+        if (!id) continue;
+        const others = (dupMap[String(id).toLowerCase()] || []).filter((k) => k !== t.key);
+        for (const k of others) if (!dupKeys.includes(k)) dupKeys.push(k);
+      }
+      const dupBanner = dupKeys.length
+        ? `<div class="tick-dup" title="Mesma rodada/transação em análise em outro ticket">⚠️ Atenção: rodada/transação em análise também em: ${dupKeys.map((k) => esc(k)).join(", ")}</div>`
+        : "";
       return `
       <div class="ticket ${bord}${isNote ? " last-note" : ""}${isReply ? (t.lastActivityIsCustomer ? " last-cust" : " last-reply") : ""}" data-key="${esc(t.key)}">
         <div class="tick-head">
@@ -293,6 +317,7 @@
           ${lastBadge}
         </div>
         ${t.organizations && t.organizations.length ? `<div class="tick-org">🏢 ${esc(t.organizations.join(", "))}</div>` : ""}
+        ${dupBanner}
         <div class="tick-title" title="${esc(t.summary)}">${esc(t.summary)}</div>
         <div class="tick-body">
           ${t.assignee ? `<span class="tick-assignee" title="Responsável">👨‍💻 ${esc(t.assignee)}</span>` : `<span class="tick-assignee empty" title="Sem responsável">👨‍💻 —</span>`}
@@ -693,9 +718,10 @@
       if (state.version === null) { state.version = data.version; return; }
       if (data.version !== state.version && !state.upgradeShown) {
         state.upgradeShown = true;
-        // Busca changelog se disponível
-        if (data.changelog) {
-          state.upgradeChangelog = data.changelog;
+        // Busca changelog se disponível (aceita array ou objeto {changelog:[...]})
+        const cl = Array.isArray(data.changelog) ? data.changelog : (data.changelog && data.changelog.changelog);
+        if (cl) {
+          state.upgradeChangelog = cl;
         }
         const banner = $("#upgradeBanner");
         if (banner) {

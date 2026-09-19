@@ -7,12 +7,9 @@ let cachedChangelog = null;
 
 // Changelog embutido (para garantir que funcione no Vercel)
 const EMBEDDED_CHANGELOG = [
-  { type: "Nova funcionalidade", title: "Contador regressivo do auto-refresh", description: "Contador regressivo no chip de status mostrando o tempo até a próxima atualização automática (ex: \"↻ 25s\"). Reinicia a cada refresh." },
-  { type: "Nova funcionalidade", title: "ESC fecha qualquer modal", description: "A tecla ESC agora fecha qualquer modal/painel aberto: visualizador de links, painel de links, painel de escalados, painel de som, painel de atendente/organização, detalhe do ticket e banner de atualização." },
-  { type: "Nova funcionalidade", title: "Tema claro/escuro", description: "Toggle de tema no header (botão 🌙/☀️). Salva a preferência no localStorage e aplica automaticamente ao carregar. Tema escuro é o padrão." },
-  { type: "Melhoria", title: "Banner de nova versão com changelog", description: "O banner de nova versão agora mostra um botão \"Ver novidades\" que abre um modal com o changelog detalhado da nova versão antes de atualizar." },
-  { type: "Melhoria", title: "Banner de Jira fora do ar", description: "Detecção automática de queda do Jira com banner pulsante, som específico, notificação persistente e log de tempo de indisponibilidade (ex: \"fora de 12:00 às 13:00\")." },
-  { type: "Correção", title: "Linha de status do ticket", description: "Correção na exibição do tempo da última resposta ao cliente (usa lastTeamPublicReplyMs) e separação da última nota interna." }
+  { type: "Nova funcionalidade", title: "Notificação para tickets com rodadas duplicadas", description: "Alerta no card quando a mesma rodada/transação (Id da Aposta / Id da Transação) aparece em mais de um ticket da fila." },
+  { type: "Nova funcionalidade", title: "Campo de busca por informações dentro do ticket", description: "A busca agora encontra palavras da descrição, dos comentários (notas internas e respostas) e de links/URLs do ticket." },
+  { type: "Em desenvolvimento", title: "Tema light/dark", description: "Tema claro/escuro em desenvolvimento: ajustes de cabeçalho e botões no mobile." }
 ];
 
 function getVersion() {

@@ -104,38 +104,45 @@ function isBot(user) {
   return n.includes("automation") || n.includes("bot") || n.includes("slack") || user.accountType === "app";
 }
 
+// Extrai IDs de aposta/transação/rodada após rótulos como
+// "Id da Aposta", "Id da Transação", "ID aposta", "bet id", "transaction id", etc.
+// O ID pode ser UUID ou token alfanumérico com -/_ (ex: 15oced-1f1n4i5sj-2100930655247664129).
+const BET_TX_LABEL_RE = /(?:id\s*(?:da|de|do)?\s*(?:aposta|transa[cç][aã]o|transation|transaction|bet|round|rodada)|bet\s*id|transaction\s*id|transation\s*id|round\s*id)\s*[:#\-]?\s*([A-Za-z0-9][A-Za-z0-9\-_]{4,80})/gi;
+
+function cleanBetTxToken(tok) {
+  return String(tok || "").replace(/[.,;)]+$/g, "").trim();
+}
+
 // Extrai UUIDs de "Id da Aposta" e "Id da Transação" do texto
 // Padrão: "Id da Aposta<UUID>" ou "Id da Transação<UUID>" (com ou sem espaço/dois pontos)
 function extractBetTransactionIds(text) {
   if (!text || typeof text !== "string") return [];
-  const uuids = [];
-  // Regex para "Id da Aposta" seguido de UUID (com ou sem espaço/dois pontos)
-  const apostaRegex = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
-  const transacaoRegex = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
-  
+  const out = [];
+  const seen = new Set();
+  BET_TX_LABEL_RE.lastIndex = 0;
   let match;
-  while ((match = apostaRegex.exec(text)) !== null) {
-    uuids.push({ type: "aposta", id: match[1].toLowerCase() });
+  while ((match = BET_TX_LABEL_RE.exec(text)) !== null) {
+    const raw = cleanBetTxToken(match[1]);
+    if (!raw) continue;
+    const id = raw.toLowerCase();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const label = match[0].toLowerCase();
+    const type = /transa|transation|transaction/.test(label) ? "transacao" : /round|rodada/.test(label) ? "round" : "aposta";
+    out.push({ type, id });
   }
-  while ((match = transacaoRegex.exec(text)) !== null) {
-    uuids.push({ type: "transacao", id: match[1].toLowerCase() });
-  }
-  return uuids;
+  return out;
 }
 
 // Extrai TODOS os UUIDs do tipo "Id da Aposta" e "Id da Transação" do texto
 function extractAllIds(text) {
   if (!text || typeof text !== "string") return new Set();
   const uuids = new Set();
-  const apostaRegex = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
-  const transacaoRegex = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
-  
+  BET_TX_LABEL_RE.lastIndex = 0;
   let match;
-  while ((match = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi.exec(text)) !== null) {
-    if (match[1]) uuids.add(match[1].toLowerCase());
-  }
-  while ((match = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi.exec(text)) !== null) {
-    if (match[1]) uuids.add(match[1].toLowerCase());
+  while ((match = BET_TX_LABEL_RE.exec(text)) !== null) {
+    const raw = cleanBetTxToken(match[1]);
+    if (raw) uuids.add(raw.toLowerCase());
   }
   return uuids;
 }
