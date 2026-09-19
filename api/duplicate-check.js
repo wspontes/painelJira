@@ -1,5 +1,5 @@
 // GET /api/duplicate-check — verifica tickets duplicados por ID de aposta/transação
-const { getAuth, jiraFetch } = require("./_helpers");
+const { getAuth, jiraFetch, extractAllIds } = require("./_helpers");
 
 module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -57,15 +57,26 @@ async function fetchIssues(cfg, jql, maxPages = 1) {
   for (let page = 0; page < maxPages; page++) {
     let path = `/rest/api/3/search/jql?jql=${encodeURIComponent(jql)}&maxResults=50&fields=summary,description`;
     if (pageToken) path += `&nextPageToken=${encodeURIComponent(pageToken)}`;
-    const res = await jiraFetch(cfg, path);
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error("Jira search " + res.status + ": " + txt.slice(0, 300));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    try {
+      const res = await jiraFetch(cfg, path, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error("Jira search " + res.status + ": " + txt.slice(0, 300));
+      }
+      const body = await res.json();
+      issues.push(...(body.issues || []));
+      if (body.isLast || !body.nextPageToken) break;
+      pageToken = body.nextPageToken;
+    } catch (e) {
+      clearTimeout(timeoutId);
+      if (e.name === 'AbortError') {
+        throw new Error("Timeout ao buscar tickets do Jira");
+      }
+      throw e;
     }
-    const body = await res.json();
-    issues.push(...(body.issues || []));
-    if (body.isLast || !body.nextPageToken) break;
-    pageToken = body.nextPageToken;
   }
   return issues;
 }
