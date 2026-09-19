@@ -20,6 +20,7 @@ const routes = {
   "/api/comments": require("./api/comments"),
   "/api/version": require("./api/version"),
   "/api/agent-view": require("./api/agent-view"),
+  "/api/duplicate-check": require("./api/duplicate-check"),
 };
 
 function makeReq(req, urlObj) {

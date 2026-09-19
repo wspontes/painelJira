@@ -104,4 +104,40 @@ function isBot(user) {
   return n.includes("automation") || n.includes("bot") || n.includes("slack") || user.accountType === "app";
 }
 
-module.exports = { getAuth, jiraFetch, adfToText, adfToHtml, adfExtractUrls, isCustomer, isBot };
+// Extrai UUIDs de "Id da Aposta" e "Id da Transação" do texto
+// Padrão: "Id da Aposta<UUID>" ou "Id da Transação<UUID>" (com ou sem espaço/dois pontos)
+function extractBetTransactionIds(text) {
+  if (!text || typeof text !== "string") return [];
+  const uuids = [];
+  // Regex para "Id da Aposta" seguido de UUID (com ou sem espaço/dois pontos)
+  const apostaRegex = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
+  const transacaoRegex = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
+  
+  let match;
+  while ((match = apostaRegex.exec(text)) !== null) {
+    uuids.push({ type: "aposta", id: match[1].toLowerCase() });
+  }
+  while ((match = transacaoRegex.exec(text)) !== null) {
+    uuids.push({ type: "transacao", id: match[1].toLowerCase() });
+  }
+  return uuids;
+}
+
+// Extrai TODOS os UUIDs do tipo "Id da Aposta" e "Id da Transação" do texto
+function extractAllIds(text) {
+  if (!text || typeof text !== "string") return new Set();
+  const uuids = new Set();
+  const apostaRegex = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
+  const transacaoRegex = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi;
+  
+  let match;
+  while ((match = /[Ii][d]\s*[dD][aA]\s*[Aa][pP][oO][sS][tT][aA]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi.exec(text)) !== null) {
+    if (match[1]) uuids.add(match[1].toLowerCase());
+  }
+  while ((match = /[Ii][d]\s*[dD][aA]\s*[Tt][rR][aA][nN][sS][aA][cC][aA][oO]\s*[:]?\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/gi.exec(text)) !== null) {
+    if (match[1]) uuids.add(match[1].toLowerCase());
+  }
+  return uuids;
+}
+
+module.exports = { getAuth, jiraFetch, adfToText, adfToHtml, adfExtractUrls, extractBetTransactionIds, extractAllIds, isCustomer, isBot };

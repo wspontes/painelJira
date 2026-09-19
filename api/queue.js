@@ -1,5 +1,5 @@
 // GET /api/queue — visão consolidada da fila (count, resumo, tempo sem resposta).
-const { getAuth, jiraFetch, adfToText, adfExtractUrls, isCustomer, isBot } = require("./_helpers");
+const { getAuth, jiraFetch, adfToText, adfExtractUrls, extractBetTransactionIds, isCustomer, isBot } = require("./_helpers");
 
 let memoryCache = null;
 const CACHE_TTL_MS = 15000;
@@ -15,6 +15,7 @@ function buildTicket(issue, comments) {
   let lastAny = null;              // último comentário (qualquer)
   let lastInternalNote = null;     // última observação interna (jsdPublic=false)
   let allCommentsText = [];        // todos os textos dos comentários para busca
+  let allTextForIds = [];          // textos para extração de IDs de aposta/transação
 
   for (const c of comments || []) {
     const t = new Date(c.created).getTime();
@@ -32,6 +33,7 @@ function buildTicket(issue, comments) {
       isCustomer: isCust,
     };
     if (text) allCommentsText.push(text);
+    if (text) allTextForIds.push(text);
     if (isBotC) continue;
     if (isPublic) {
       if (isCust) lastCustomerActivity = t;
@@ -41,6 +43,14 @@ function buildTicket(issue, comments) {
       if (!lastInternalNote || t > lastInternalNote) lastInternalNote = t;
     }
   }
+
+  // Também adiciona description aos textos para extração de IDs
+  const descriptionText = f.description ? (typeof f.description === "string" ? f.description : adfToText(f.description)) : "";
+  if (descriptionText) allTextForIds.push(descriptionText);
+
+  // Extrai IDs de aposta e transação
+  const allTextForIdsCombined = allTextForIds.join("\n\n");
+  const betTransactionIds = extractBetTransactionIds(allTextForIdsCombined);
 
   if (!lastCustomerActivity) lastCustomerActivity = created;
 
@@ -64,6 +74,7 @@ function buildTicket(issue, comments) {
     description: f.description ? (typeof f.description === "string" ? f.description : adfToText(f.description)) : "",
     descriptionUrls: f.description ? adfExtractUrls(f.description) : [],
     commentsText: allCommentsText.join("\n\n"), // todos os comentários concatenados para busca
+    betTransactionIds: betTransactionIds, // IDs de aposta e transação extraídos
     created,
     updated: new Date(f.updated).getTime(),
     ageMs: now - created,
