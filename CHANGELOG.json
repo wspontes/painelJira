@@ -1,21 +1,21 @@
 {
-  "version": "1.8",
+  "version": "1.9",
   "date": "2026-09-19",
   "changelog": [
     {
-      "type": "Nova funcionalidade",
-      "title": "Notificação para tickets com rodadas duplicadas",
-      "description": "Alerta no card quando a mesma rodada/transação (Id da Aposta / Id da Transação) aparece em mais de um ticket da fila."
+      "type": "Correção",
+      "title": "Ver novidades abre o modal",
+      "description": "Correção do formato do changelog (array/objeto) e proteção contra modal vazio ao conferir novidades."
     },
     {
-      "type": "Nova funcionalidade",
-      "title": "Campo de busca por informações dentro do ticket",
-      "description": "A busca agora encontra palavras da descrição, dos comentários (notas internas e respostas) e de links/URLs do ticket."
+      "type": "Melhoria",
+      "title": "Banner de atualização no mobile",
+      "description": "Banner empilhado com botões em altura de toque (44px), sem sobreposição entre Ver novidades e Atualizar."
     },
     {
-      "type": "Em desenvolvimento",
-      "title": "Tema light/dark",
-      "description": "Tema claro/escuro em desenvolvimento: ajustes de cabeçalho e botões no mobile."
+      "type": "Melhoria",
+      "title": "Atualizações sem hard refresh",
+      "description": "Arquivos com versão na URL (?v=) para o navegador buscar o JS/CSS novo a cada release."
     }
   ]
 }

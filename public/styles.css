@@ -335,15 +335,16 @@ select#sortSelect {
 /* banner de nova versão */
 .upgrade-banner {
   position: fixed; top: 0; left: 0; right: 0; z-index: 300;
-  display: flex; align-items: center; justify-content: center; gap: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 8px 12px; flex-wrap: wrap;
   padding: 10px 14px; background: var(--accent); color: #1b120a;
   font-weight: 700; font-size: 13px;
 }
-.upgrade-banner .ub-txt { flex: none; }
+.upgrade-banner .ub-txt { flex: 1 1 auto; min-width: 200px; text-align: center; }
 .upgrade-banner .ub-details {
-  background: rgba(0,0,0,.2); border: none; border-radius: 4px;
-  color: inherit; font-weight: 600; font-size: 12px;
-  padding: 2px 8px; cursor: pointer;
+  background: rgba(0,0,0,.2); border: none; border-radius: 6px;
+  color: inherit; font-weight: 700; font-size: 13px;
+  padding: 8px 14px; margin-left: 8px; cursor: pointer; min-height: 44px;
+  display: inline-block; vertical-align: middle;
 }
 .upgrade-banner .ub-details:hover { background: rgba(0,0,0,.3); }
 .upgrade-banner .btn-ghost { background: #1b120a; color: #fff; border-color: #1b120a; }
@@ -446,6 +447,11 @@ select#sortSelect {
   .comment-item .tag-public, .comment-item .tag-internal { margin-bottom: 6px; }
   .links-list { max-height: none; flex: 1; }
   .link-row { padding: 14px; }
+
+  /* Banner de upgrade: empilha no mobile com alvos de toque grandes */
+  .upgrade-banner { flex-direction: column; gap: 8px; padding: 12px; }
+  .upgrade-banner .ub-txt { min-width: 0; width: 100%; }
+  .upgrade-banner .btn-ghost { min-height: 44px; width: 100%; }
 }
 
 @media (max-width: 400px) {

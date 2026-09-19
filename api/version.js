@@ -7,9 +7,9 @@ let cachedChangelog = null;
 
 // Changelog embutido (para garantir que funcione no Vercel)
 const EMBEDDED_CHANGELOG = [
-  { type: "Nova funcionalidade", title: "Notificação para tickets com rodadas duplicadas", description: "Alerta no card quando a mesma rodada/transação (Id da Aposta / Id da Transação) aparece em mais de um ticket da fila." },
-  { type: "Nova funcionalidade", title: "Campo de busca por informações dentro do ticket", description: "A busca agora encontra palavras da descrição, dos comentários (notas internas e respostas) e de links/URLs do ticket." },
-  { type: "Em desenvolvimento", title: "Tema light/dark", description: "Tema claro/escuro em desenvolvimento: ajustes de cabeçalho e botões no mobile." }
+  { type: "Correção", title: "Ver novidades abre o modal", description: "Correção do formato do changelog (array/objeto) e proteção contra modal vazio ao conferir novidades." },
+  { type: "Melhoria", title: "Banner de atualização no mobile", description: "Banner empilhado com botões em altura de toque (44px), sem sobreposição entre Ver novidades e Atualizar." },
+  { type: "Melhoria", title: "Atualizações sem hard refresh", description: "Arquivos com versão na URL (?v=) para o navegador buscar o JS/CSS novo a cada release." }
 ];
 
 function getVersion() {

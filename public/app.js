@@ -729,7 +729,7 @@
           // Atualiza o banner com changelog se disponível
           const txt = banner.querySelector(".ub-txt");
           if (txt && state.upgradeChangelog) {
-            txt.innerHTML = `🆕 Nova versão disponível <button class="ub-details" style="margin-left:8px;padding:2px 8px;background:rgba(0,0,0,.2);border:none;border-radius:4px;cursor:pointer;">Ver novidades</button>`;
+            txt.innerHTML = `🆕 Nova versão disponível <button class="ub-details">Ver novidades</button>`;
             banner.querySelector(".ub-details").addEventListener("click", showUpgradeDetails);
           }
         }
@@ -744,7 +744,10 @@
   }
 
   function showUpgradeDetails() {
-    if (!state.upgradeChangelog) return;
+    const items = Array.isArray(state.upgradeChangelog)
+      ? state.upgradeChangelog
+      : (state.upgradeChangelog && state.upgradeChangelog.changelog) || [];
+    if (!items.length) return;
     const p = $("#linksPanel"); // reusa o painel
     p.classList.remove("hidden");
     p.innerHTML = `
@@ -844,6 +847,25 @@
   checkVersion();
   renderGroupChip();
   startCountdown();
+  // Debug QA: ?banner=1 força o banner de upgrade (para testar layout/toque no mobile)
+  try {
+    if (new URLSearchParams(location.search).get("banner") === "1") {
+      fetch("/api/version", { cache: "no-store" }).then((r) => r.json()).then((d) => {
+        const cl = Array.isArray(d.changelog) ? d.changelog : (d.changelog && d.changelog.changelog);
+        if (cl) state.upgradeChangelog = cl;
+        state.upgradeShown = true;
+        const b = $("#upgradeBanner");
+        if (b) {
+          b.classList.remove("hidden");
+          const txt = b.querySelector(".ub-txt");
+          if (txt) {
+            txt.innerHTML = '🆕 Nova versão disponível <button class="ub-details">Ver novidades</button>';
+            b.querySelector(".ub-details").addEventListener("click", showUpgradeDetails);
+          }
+        }
+      }).catch(() => {});
+    }
+  } catch (e) {}
   // Theme toggle
   $("#btnTheme").addEventListener("click", () => {
     state.theme = state.theme === "dark" ? "light" : "dark";
