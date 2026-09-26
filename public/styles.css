@@ -190,9 +190,9 @@ select#sortSelect {
 .ticket.unassigned-default { border-left: 3px solid var(--blue); }
 
 /* Destaque: última atividade foi observação interna (não conta como resposta ao cliente) */
-.ticket.last-note { background: linear-gradient(135deg, #2a2438 0%, var(--panel) 55%); border-color: #6b5b95; }
+.ticket.last-note { background: var(--panel); border-color: #6b5b95; }
 .ticket.last-note:hover { border-color: #8a79b5; }
-.ticket.last-reply { background: linear-gradient(135deg, #12261c 0%, var(--panel) 55%); border-color: #3a7d5a; }
+.ticket.last-reply { background: var(--panel); border-color: #3a7d5a; }
 .ticket.last-reply:hover { border-color: var(--green); }
 
 .tick-type { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
